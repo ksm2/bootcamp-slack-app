@@ -1,7 +1,16 @@
 {
   "name": "bootcamp-slack-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "src/main.ts",
   "author": "Konstantin Simon Maria Möllers <ksm.moellers@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node-esm src/main.ts"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
 }
