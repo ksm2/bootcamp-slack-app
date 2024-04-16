@@ -52,4 +52,25 @@ export class LocalDate {
     const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     return DAYS_IN_MONTH[month - 1];
   }
+
+  static parse(value: string): LocalDate {
+    if (value.length === 10) {
+      const year = parseInt(value.slice(0, 4), 10);
+      const month = parseInt(value.slice(5, 7), 10);
+      const day = parseInt(value.slice(8, 10), 10);
+      if (
+        Number.isInteger(year) &&
+        Number.isInteger(month) &&
+        Number.isInteger(day)
+      ) {
+        if (month >= 1 && month <= 12) {
+          if (day >= 1 && day <= 31) {
+            return new LocalDate(year, month, day);
+          }
+        }
+      }
+    }
+
+    throw new TypeError("Not a LocalDate: " + value);
+  }
 }

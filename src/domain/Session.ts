@@ -4,4 +4,5 @@ export interface Session {
   sessionId: string;
   date: LocalDate;
   participants: string[];
+  ts?: string;
 }

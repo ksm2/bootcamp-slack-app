@@ -4,7 +4,6 @@ import { Session } from "../domain/Session.js";
 
 export class WebClientSessionPresenter implements SessionPresenter {
   readonly #webClient: WebClient;
-  readonly #messages = new Map<string, string>();
   readonly #channel: string;
 
   constructor(webClient: WebClient, channel: string) {
@@ -13,19 +12,18 @@ export class WebClientSessionPresenter implements SessionPresenter {
   }
 
   async presentSession(session: Session): Promise<void> {
-    if (this.#messages.has(session.sessionId)) {
-      const ts = this.#messages.get(session.sessionId)!;
+    if (session.ts) {
       await this.#webClient.chat.update({
         blocks: this.render(session),
         channel: this.#channel,
-        ts,
+        ts: session.ts,
       });
     } else {
       const { ts } = await this.#webClient.chat.postMessage({
         blocks: this.render(session),
         channel: this.#channel,
       });
-      this.#messages.set(session.sessionId, ts!);
+      session.ts = ts;
     }
   }
 
