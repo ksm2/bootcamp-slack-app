@@ -1,4 +1,12 @@
 export class LocalDate {
+  static readonly SUNDAY = 0;
+  static readonly MONDAY = 1;
+  static readonly TUESDAY = 2;
+  static readonly WEDNESDAY = 3;
+  static readonly THURSDAY = 4;
+  static readonly FRIDAY = 5;
+  static readonly SATURDAY = 6;
+
   readonly year: number;
   readonly month: number;
   readonly day: number;
@@ -12,6 +20,10 @@ export class LocalDate {
   static today(): LocalDate {
     const now = new Date();
     return new LocalDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  }
+
+  get weekday(): number {
+    return this.toDate().getDay();
   }
 
   isToday(): boolean {
@@ -32,6 +44,20 @@ export class LocalDate {
     return new LocalDate(this.year - 1, 12, 31);
   }
 
+  tomorrow(): LocalDate {
+    if (this.day >= LocalDate.lastOfMonth(this.month - 1)) {
+      if (this.month >= 12) {
+        return new LocalDate(this.year + 1, 1, 1);
+      }
+      return new LocalDate(this.year, this.month + 1, 1);
+    }
+    return new LocalDate(this.year, this.month, this.day + 1);
+  }
+
+  toDate(): Date {
+    return new Date(this.year, this.month - 1, this.day);
+  }
+
   toJSON(): string {
     return this.toString();
   }
@@ -40,7 +66,7 @@ export class LocalDate {
     return `${this.year}-${this.month.toString().padStart(2, "0")}-${this.day.toString().padStart(2, "0")}`;
   }
 
-  private equals(other: LocalDate): boolean {
+  equals(other: LocalDate): boolean {
     return (
       this.year === other.year &&
       this.month === other.month &&

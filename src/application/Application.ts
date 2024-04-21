@@ -27,20 +27,74 @@ export class Application {
     for (const session of existingSessions) {
       this.#sessions.set(session.sessionId, session);
     }
-    console.dir(this.#sessions);
     console.info("Sessions loaded");
+    await this.createSessions();
+    console.info("Sessions created");
+
+    console.dir(this.#sessions);
   }
 
   sessions(): Session[] {
     return [...this.#sessions.values()];
   }
 
-  async createSession(): Promise<void> {
-    const session = {
-      sessionId: crypto.randomUUID(),
-      date: LocalDate.today(),
-      participants: [],
-    } satisfies Session;
+  async createSessions(): Promise<void> {
+    const nextDates = this.calculateNextDates();
+    await this.createSessionsForDatesIfNotExist(nextDates);
+  }
+
+  private calculateNextDates(): LocalDate[] {
+    const date1 = this.calculateNextDateFrom(LocalDate.today());
+    const date2 = this.calculateNextDateFrom(date1.tomorrow());
+    const date3 = this.calculateNextDateFrom(date2.tomorrow());
+
+    return [date1, date2, date3];
+  }
+
+  private calculateNextDateFrom(date: LocalDate): LocalDate {
+    switch (date.weekday) {
+      case LocalDate.SUNDAY:
+        return date.tomorrow();
+      case LocalDate.MONDAY:
+        return date;
+      case LocalDate.TUESDAY:
+        return date;
+      case LocalDate.WEDNESDAY:
+        return date.tomorrow();
+      case LocalDate.THURSDAY:
+        return date;
+      case LocalDate.FRIDAY:
+        return date.tomorrow().tomorrow().tomorrow();
+      case LocalDate.SATURDAY:
+      default:
+        return date.tomorrow().tomorrow();
+    }
+  }
+
+  private async createSessionsForDatesIfNotExist(
+    dates: LocalDate[],
+  ): Promise<void> {
+    for (const date of dates) {
+      const session = this.findSessionForDate(date);
+      if (session === undefined) {
+        await this.createSessionForDate(date);
+      }
+    }
+  }
+
+  private findSessionForDate(date: LocalDate): Session | undefined {
+    for (const session of this.#sessions.values()) {
+      if (session.date.equals(date)) {
+        return session;
+      }
+    }
+
+    return undefined;
+  }
+
+  private async createSessionForDate(date: LocalDate): Promise<void> {
+    const sessionId = crypto.randomUUID();
+    const session = { sessionId, date, participants: [] } satisfies Session;
 
     this.#sessions.set(session.sessionId, session);
     await this.#sessionPresenter.presentSession(session);

@@ -48,11 +48,11 @@ const application = new Application({
 const actionEmitter = new EventEmitter();
 
 CronJob.from({
-  cronTime: "0 8 * * 1,2,4",
+  cronTime: "0 8 * * *",
   start: true,
   runOnInit: false,
   onTick: async () => {
-    await application.createSession();
+    await application.createSessions();
   },
 });
 
