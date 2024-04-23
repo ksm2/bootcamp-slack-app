@@ -36,6 +36,7 @@ export class Application {
       `Loaded ${existingSessions.length} sessions from repository`,
     );
     await this.createSessions();
+    await this.presentSessionOfToday();
 
     this.#logger.info("Application started");
   }
@@ -103,9 +104,18 @@ export class Application {
     const session = { sessionId, date, participants: [] } satisfies Session;
 
     this.#sessions.set(session.sessionId, session);
-    await this.#sessionPresenter.presentSession(session);
     await this.#sessionRepository.saveSession(session);
     this.#logger.debug(`Created session ${session}`);
+  }
+
+  async presentSessionOfToday(): Promise<void> {
+    const today = LocalDate.today();
+    const session = this.findSessionForDate(today);
+    if (session) {
+      await this.#sessionPresenter.presentSession(session);
+    } else {
+      this.#logger.warn("No session for today");
+    }
   }
 
   async joinSession({ sessionId, user }: { sessionId: string; user: User }) {

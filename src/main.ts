@@ -69,6 +69,7 @@ CronJob.from({
   runOnInit: false,
   onTick: async () => {
     await application.createSessions();
+    await application.presentSessionOfToday();
   },
 });
 
