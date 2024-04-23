@@ -1,5 +1,5 @@
 import { EventEmitter } from "@denosaurs/event";
-import { SocketModeClient } from "@slack/socket-mode";
+import { LogLevel, SocketModeClient } from "@slack/socket-mode";
 import { WebClient } from "@slack/web-api";
 import { load } from "@std/dotenv";
 import { CronJob } from "cron";
@@ -7,6 +7,7 @@ import { CronJob } from "cron";
 import express from "express";
 import { Level } from "level";
 import { LevelSessionRepository } from "./adapters/LevelSessionRepository.ts";
+import { Logger } from "./application/Logger.ts";
 import { SlackActions } from "./adapters/SlackActions.ts";
 import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
 import { Application } from "./application/Application.ts";
@@ -42,12 +43,16 @@ const sessions = db.sublevel<string, Session>("sessions", {
 });
 const repository = new LevelSessionRepository(sessions);
 
-const socketModeClient = new SocketModeClient({ appToken });
+const socketModeClient = new SocketModeClient({
+  appToken,
+  logger: new Logger("SocketModeClient", LogLevel.INFO),
+});
 const webClient = new WebClient(botToken);
 
 await socketModeClient.start();
 
 const application = new Application({
+  logger: new Logger("Application"),
   sessionPresenter: new SlackSessionPresenter(webClient, channel),
   sessionRepository: repository,
 });
@@ -92,6 +97,7 @@ socketModeClient.on("interactive", async ({ body, ack }) => {
 
 await application.start();
 
+const logger = new Logger("Express");
 const app = express();
 
 app.use(express.json());
@@ -101,5 +107,5 @@ app.get("/sessions", (_req, res) => {
 });
 
 app.listen(8080, () => {
-  console.log("App running on http://localhost:8080");
+  logger.info("Server running on http://localhost:8080");
 });

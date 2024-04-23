@@ -1,36 +1,43 @@
 import { LocalDate } from "../domain/LocalDate.ts";
 import { Session } from "../domain/Session.ts";
 import { User } from "../domain/User.ts";
+import { Logger } from "./Logger.ts";
 import { SessionPresenter } from "./SessionPresenter.ts";
 import { SessionRepository } from "./SessionRepository.ts";
 
 export class Application {
+  readonly #logger: Logger;
   readonly #sessionPresenter: SessionPresenter;
   readonly #sessionRepository: SessionRepository;
   readonly #sessions: Map<string, Session> = new Map();
 
   constructor({
+    logger,
     sessionPresenter,
     sessionRepository,
   }: {
+    logger: Logger;
     sessionPresenter: SessionPresenter;
     sessionRepository: SessionRepository;
   }) {
+    this.#logger = logger;
     this.#sessionPresenter = sessionPresenter;
     this.#sessionRepository = sessionRepository;
   }
 
   async start(): Promise<void> {
-    console.log("Starting");
+    this.#logger.debug("Application starting");
+
     const existingSessions = await this.#sessionRepository.loadSessions();
     for (const session of existingSessions) {
       this.#sessions.set(session.sessionId, session);
     }
-    console.info("Sessions loaded");
+    this.#logger.info(
+      `Loaded ${existingSessions.length} sessions from repository`,
+    );
     await this.createSessions();
-    console.info("Sessions created");
 
-    console.dir(this.#sessions);
+    this.#logger.info("Application started");
   }
 
   sessions(): Session[] {
@@ -98,18 +105,19 @@ export class Application {
     this.#sessions.set(session.sessionId, session);
     await this.#sessionPresenter.presentSession(session);
     await this.#sessionRepository.saveSession(session);
+    this.#logger.debug(`Created session ${session}`);
   }
 
   async joinSession({ sessionId, user }: { sessionId: string; user: User }) {
     const session = this.#sessions.get(sessionId);
     if (!session) {
-      console.error("No session with ID:", sessionId);
+      this.#logger.error("No session with ID:", sessionId);
       return;
     }
 
     const index = session.participants.indexOf(user.id);
     if (index >= 0) {
-      console.warn("User already part of session:", user);
+      this.#logger.warn("User already part of session:", user);
     } else {
       session.participants.push(user.id);
       await this.#sessionPresenter.presentSession(session);
@@ -120,7 +128,7 @@ export class Application {
   async quitSession({ sessionId, user }: { sessionId: string; user: User }) {
     const session = this.#sessions.get(sessionId);
     if (!session) {
-      console.error("No session with ID:", sessionId);
+      this.#logger.error("No session with ID:", sessionId);
       return;
     }
 
@@ -130,7 +138,7 @@ export class Application {
       await this.#sessionPresenter.presentSession(session);
       await this.#sessionRepository.saveSession(session);
     } else {
-      console.warn("User is not part of session:", user);
+      this.#logger.warn("User is not part of session:", user);
     }
   }
 }
