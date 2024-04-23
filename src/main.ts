@@ -63,11 +63,13 @@ interface Action {
 
 const actionEmitter = new EventEmitter<{ [action: string]: [Action, any] }>();
 
+const cronJobLogger = new Logger("CronJob");
 CronJob.from({
   cronTime: "0 8 * * *",
   start: true,
   runOnInit: false,
   onTick: async () => {
+    cronJobLogger.debug(`CronJob running on ${LocalDate.today()} at 8:00 AM`)
     await application.createSessions();
     await application.presentSessionOfToday();
   },
