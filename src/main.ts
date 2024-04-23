@@ -1,24 +1,30 @@
-import EventEmitter from "node:events";
+import { EventEmitter } from "@denosaurs/event";
+import { load } from "@std/dotenv";
 import { CronJob } from "cron";
-import dotenv from "dotenv";
+// @deno-types="npm:@types/express@^4.17.21"
 import express from "express";
 import { Level } from "level";
 import { SocketModeClient } from "@slack/socket-mode";
 import { WebClient } from "@slack/web-api";
-import { Application } from "./application/Application.js";
-import { WebClientSessionPresenter } from "./adapters/WebClientSessionPresenter.js";
-import { LevelSessionRepository } from "./adapters/LevelSessionRepository.js";
-import { Session } from "./domain/Session.js";
-import { LocalDate } from "./domain/LocalDate.js";
+import { Application } from "./application/Application.ts";
+import { WebClientSessionPresenter } from "./adapters/WebClientSessionPresenter.ts";
+import { LevelSessionRepository } from "./adapters/LevelSessionRepository.ts";
+import { Session } from "./domain/Session.ts";
+import { LocalDate } from "./domain/LocalDate.ts";
 
-dotenv.config();
+await load({ export: true });
 
-const appToken = process.env.SLACK_APP_TOKEN;
-const botToken = process.env.SLACK_BOT_TOKEN;
-const channel = process.env.SLACK_CHANNEL!;
-const dbLocation = process.env.DB_LOCATION!;
+const appToken = Deno.env.get("SLACK_APP_TOKEN");
+const botToken = Deno.env.get("SLACK_BOT_TOKEN");
+const channel = Deno.env.get("SLACK_CHANNEL");
+const dbLocation = Deno.env.get("DB_LOCATION") ?? "data";
 
-const db = new Level<string, Session>(dbLocation, {
+if (!channel) {
+  throw new Error("Please provide SLACK_CHANNEL");
+}
+
+const db = new Level(dbLocation);
+const sessions = db.sublevel<string, Session>("sessions", {
   valueEncoding: {
     name: "session",
     format: "utf8",
@@ -33,7 +39,7 @@ const db = new Level<string, Session>(dbLocation, {
       }),
   },
 });
-const repository = new LevelSessionRepository(db);
+const repository = new LevelSessionRepository(sessions);
 
 const socketModeClient = new SocketModeClient({ appToken });
 const webClient = new WebClient(botToken);
@@ -45,7 +51,11 @@ const application = new Application({
   sessionRepository: repository,
 });
 
-const actionEmitter = new EventEmitter();
+interface Action {
+  value: string;
+}
+
+const actionEmitter = new EventEmitter<{ [action: string]: [Action, any] }>();
 
 CronJob.from({
   cronTime: "0 8 * * *",
@@ -85,7 +95,7 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/sessions", async (req, res) => {
+app.get("/sessions", (_req, res) => {
   res.send(application.sessions());
 });
 

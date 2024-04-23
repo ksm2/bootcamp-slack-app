@@ -1,9 +1,8 @@
-import crypto from "node:crypto";
-import { LocalDate } from "../domain/LocalDate.js";
-import { Session } from "../domain/Session.js";
-import { User } from "../domain/User.js";
-import { SessionPresenter } from "./SessionPresenter.js";
-import { SessionRepository } from "./SessionRepository.js";
+import { LocalDate } from "../domain/LocalDate.ts";
+import { Session } from "../domain/Session.ts";
+import { User } from "../domain/User.ts";
+import { SessionPresenter } from "./SessionPresenter.ts";
+import { SessionRepository } from "./SessionRepository.ts";
 
 export class Application {
   readonly #sessionPresenter: SessionPresenter;

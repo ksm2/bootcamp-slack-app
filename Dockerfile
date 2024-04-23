@@ -1,21 +1,12 @@
-FROM node:20.12.2-alpine AS base
+FROM denoland/deno:1.42.1
 WORKDIR /usr/src/app
+EXPOSE 8080
 
+ENV DB_LOCATION="/usr/var/data"
 
-FROM base AS install
+COPY deno.json deno.lock ./
+COPY src ./src
 
-ADD package.json yarn.lock tsconfig.json ./
-COPY ./src src
+RUN deno cache src/main.ts
 
-RUN yarn install --frozen-lockfile
-
-
-FROM base AS release
-
-ENV NODE_ENV=production
-COPY ts-load.js ./
-COPY --from=install /usr/src/app/package.json /usr/src/app/tsconfig.json ./
-COPY --from=install /usr/src/app/src ./src
-COPY --from=install /usr/src/app/node_modules ./node_modules
-
-CMD ["npm", "start"]
+CMD ["run", "--allow-read", "--allow-write=/usr/var/data", "--allow-env", "--allow-ffi", "--allow-sys=osRelease", "--allow-net=slack.com,wss-primary.slack.com,0.0.0.0", "src/main.ts"]

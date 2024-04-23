@@ -1,4 +1,4 @@
-import { Session } from "../domain/Session.js";
+import { Session } from "../domain/Session.ts";
 
 export interface SessionPresenter {
   presentSession(session: Session): Promise<void>;

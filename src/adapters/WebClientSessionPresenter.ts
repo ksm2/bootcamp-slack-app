@@ -1,6 +1,6 @@
 import { KnownBlock, WebClient } from "@slack/web-api";
-import { SessionPresenter } from "../application/SessionPresenter.js";
-import { Session } from "../domain/Session.js";
+import { SessionPresenter } from "../application/SessionPresenter.ts";
+import { Session } from "../domain/Session.ts";
 
 export class WebClientSessionPresenter implements SessionPresenter {
   readonly #webClient: WebClient;

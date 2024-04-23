@@ -1,4 +1,4 @@
-import { LocalDate } from "./LocalDate.js";
+import { LocalDate } from "./LocalDate.ts";
 
 export interface Session {
   sessionId: string;

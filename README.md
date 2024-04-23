@@ -1,12 +1,9 @@
-bootcamp-slack-app
-==================
+# bootcamp-slack-app
 
 A Slack App which allows booking Bootcamp sessions.
 
-
 ## Getting Started
 
-This project uses **TypeScript** and **Yarn**.
+This project uses **Deno**.
 
-    yarn install
-    yarn start
+    deno task dev

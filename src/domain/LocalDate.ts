@@ -63,7 +63,9 @@ export class LocalDate {
   }
 
   toString(): string {
-    return `${this.year}-${this.month.toString().padStart(2, "0")}-${this.day.toString().padStart(2, "0")}`;
+    const month = this.month.toString().padStart(2, "0");
+    const day = this.day.toString().padStart(2, "0");
+    return `${this.year}-${month}-${day}`;
   }
 
   equals(other: LocalDate): boolean {
