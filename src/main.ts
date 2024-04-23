@@ -1,16 +1,17 @@
 import { EventEmitter } from "@denosaurs/event";
+import { SocketModeClient } from "@slack/socket-mode";
+import { WebClient } from "@slack/web-api";
 import { load } from "@std/dotenv";
 import { CronJob } from "cron";
 // @deno-types="npm:@types/express@^4.17.21"
 import express from "express";
 import { Level } from "level";
-import { SocketModeClient } from "@slack/socket-mode";
-import { WebClient } from "@slack/web-api";
-import { Application } from "./application/Application.ts";
-import { WebClientSessionPresenter } from "./adapters/WebClientSessionPresenter.ts";
 import { LevelSessionRepository } from "./adapters/LevelSessionRepository.ts";
-import { Session } from "./domain/Session.ts";
+import { SlackActions } from "./adapters/SlackActions.ts";
+import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
+import { Application } from "./application/Application.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
+import { Session } from "./domain/Session.ts";
 
 await load({ export: true });
 
@@ -47,7 +48,7 @@ const webClient = new WebClient(botToken);
 await socketModeClient.start();
 
 const application = new Application({
-  sessionPresenter: new WebClientSessionPresenter(webClient, channel),
+  sessionPresenter: new SlackSessionPresenter(webClient, channel),
   sessionRepository: repository,
 });
 
@@ -66,14 +67,14 @@ CronJob.from({
   },
 });
 
-actionEmitter.on("button_quit", async (action, body) => {
+actionEmitter.on(SlackActions.QUIT, async (action, body) => {
   await application.quitSession({
     sessionId: action.value,
     user: body.user,
   });
 });
 
-actionEmitter.on("button_join", async (action, body) => {
+actionEmitter.on(SlackActions.JOIN, async (action, body) => {
   await application.joinSession({
     sessionId: action.value,
     user: body.user,

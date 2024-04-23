@@ -1,8 +1,9 @@
 import { KnownBlock, WebClient } from "@slack/web-api";
 import { SessionPresenter } from "../application/SessionPresenter.ts";
 import { Session } from "../domain/Session.ts";
+import { SlackActions } from "./SlackActions.ts";
 
-export class WebClientSessionPresenter implements SessionPresenter {
+export class SlackSessionPresenter implements SessionPresenter {
   readonly #webClient: WebClient;
   readonly #channel: string;
 
@@ -56,7 +57,7 @@ export class WebClientSessionPresenter implements SessionPresenter {
             },
             style: "primary",
             value: session.sessionId,
-            action_id: "button_join",
+            action_id: SlackActions.JOIN,
           },
           {
             type: "button",
@@ -65,7 +66,7 @@ export class WebClientSessionPresenter implements SessionPresenter {
               text: "Stay Home",
             },
             value: session.sessionId,
-            action_id: "button_quit",
+            action_id: SlackActions.QUIT,
           },
         ],
       },
