@@ -1,3 +1,28 @@
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 export class LocalDate {
   static readonly SUNDAY = 0;
   static readonly MONDAY = 1;
@@ -86,6 +111,26 @@ export class LocalDate {
 
   toJSON(): string {
     return this.toString();
+  }
+
+  toHuman(): string {
+    const weekdayString = WEEKDAYS[this.weekday];
+    const monthString = MONTHS[this.month - 1];
+    const ord = (n: number): string => {
+      if (n === 1 || n === 21 || n === 31) {
+        return "st";
+      }
+      if (n === 2 || n === 22) {
+        return "nd";
+      }
+      if (n === 3 || n === 23) {
+        return "rd";
+      }
+      return "th";
+    };
+    return `${weekdayString}, ${this.day}${
+      ord(this.day)
+    } ${monthString} ${this.year}`;
   }
 
   toString(): string {

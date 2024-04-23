@@ -66,20 +66,20 @@ export class Application {
   private calculateNextDateFrom(date: LocalDate): LocalDate {
     switch (date.weekday) {
       case LocalDate.SUNDAY:
-        return date.tomorrow();
+        return date.addDays(1);
       case LocalDate.MONDAY:
         return date;
       case LocalDate.TUESDAY:
         return date;
       case LocalDate.WEDNESDAY:
-        return date.tomorrow();
+        return date.addDays(1);
       case LocalDate.THURSDAY:
         return date;
       case LocalDate.FRIDAY:
-        return date.tomorrow().tomorrow().tomorrow();
+        return date.addDays(3);
       case LocalDate.SATURDAY:
       default:
-        return date.tomorrow().tomorrow();
+        return date.addDays(2);
     }
   }
 
@@ -124,53 +124,86 @@ export class Application {
   }
 
   async joinSession(
-    { dateString, sessionId, user }: {
+    { dateString, sessionId, user, channel }: {
       dateString?: string;
       sessionId?: string;
       user: User;
+      channel: string;
     },
   ) {
-    const session = this.findSession({ dateString, sessionId });
-    if (!session) return;
+    let session: Session;
+    try {
+      session = this.findSession({ dateString, sessionId });
+    } catch (error) {
+      this.#logger.warn(error.message);
+      await this.#helpPrinter.printInfo(user.id, channel, error.message);
+      return;
+    }
 
     const index = session.participants.indexOf(user.id);
     if (index >= 0) {
       this.#logger.warn("User already part of session:", user);
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You already joined the bootcamp on ${session.date.toHuman()}.`,
+      );
     } else {
       session.participants.push(user.id);
       await this.#sessionPresenter.representSession(session);
       await this.#sessionRepository.saveSession(session);
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You are joining the bootcamp on ${session.date.toHuman()}.`,
+      );
     }
   }
 
   async quitSession(
-    { dateString, sessionId, user }: {
+    { dateString, sessionId, user, channel }: {
       dateString?: string;
       sessionId?: string;
       user: User;
+      channel: string;
     },
   ) {
-    const session = this.findSession({ dateString, sessionId });
-    if (!session) return;
+    let session: Session;
+    try {
+      session = this.findSession({ dateString, sessionId });
+    } catch (error) {
+      this.#logger.warn(error.message);
+      await this.#helpPrinter.printInfo(user.id, channel, error.message);
+      return;
+    }
 
     const index = session.participants.indexOf(user.id);
     if (index >= 0) {
       session.participants.splice(index, 1);
       await this.#sessionPresenter.representSession(session);
       await this.#sessionRepository.saveSession(session);
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You are not joining the bootcamp on ${session.date.toHuman()} anymore.`,
+      );
     } else {
       this.#logger.warn("User is not part of session:", user);
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You have not joined the bootcamp on ${session.date.toHuman()}.`,
+      );
     }
   }
 
   private findSession(
     { dateString, sessionId }: { dateString?: string; sessionId?: string },
-  ): Session | undefined {
+  ): Session {
     if (sessionId) {
       const session = this.#sessions.get(sessionId);
       if (!session) {
-        this.#logger.error("No session with ID:", sessionId);
-        return undefined;
+        throw new Error("No session with ID " + sessionId);
       }
 
       return session;
@@ -185,7 +218,11 @@ export class Application {
 
     if (dateString === "tomorrow") {
       const tomorrow = LocalDate.today().tomorrow();
-      return this.findSessionForDate(tomorrow);
+      const session = this.findSessionForDate(tomorrow);
+      if (!session) {
+        throw new Error("No session for tomorrow");
+      }
+      return session;
     }
 
     const weekdays = [
@@ -201,15 +238,18 @@ export class Application {
     for (const [weekday, day] of weekdays) {
       if (dateString === weekday) {
         const nextWeekday = LocalDate.today().nextWeekday(day);
-        return this.findSessionForDate(nextWeekday);
+        const session = this.findSessionForDate(nextWeekday);
+        if (!session) {
+          throw new Error(`No session on ${weekday}`);
+        }
+        return session;
       }
     }
 
-    this.#logger.warn("Invalid date string:", dateString);
-    return undefined;
+    throw new Error("Invalid date: " + dateString);
   }
 
-  private findNextSession(): Session | undefined {
+  private findNextSession(): Session {
     const today = LocalDate.today();
     let result: Session | undefined;
     for (const session of this.#sessions.values()) {
@@ -219,6 +259,10 @@ export class Application {
       ) {
         result = session;
       }
+    }
+
+    if (!result) {
+      throw new Error("No next session found");
     }
 
     return result;

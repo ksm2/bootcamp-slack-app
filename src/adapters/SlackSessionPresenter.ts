@@ -100,7 +100,7 @@ export class SlackSessionPresenter implements SessionPresenter {
       return "*Ready to sweat today?* :hot_face:";
     }
 
-    return `Who joined on ${session.date}:`;
+    return `Who joined on ${session.date.toHuman()}:`;
   }
 
   private list(participants: readonly string[]): string {

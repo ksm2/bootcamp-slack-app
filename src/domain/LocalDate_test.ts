@@ -42,3 +42,10 @@ Deno.test("next weekday with different weekday", () => {
   const actual = mondayFirstOfApril.nextWeekday(LocalDate.FRIDAY);
   assertEquals(actual, new LocalDate(2024, 4, 5));
 });
+
+Deno.test("human", () => {
+  const actual1 = new LocalDate(2024, 4, 1).toHuman();
+  assertEquals(actual1, "Monday, 1st April 2024");
+  const actual2 = new LocalDate(2024, 5, 14).toHuman();
+  assertEquals(actual2, "Tuesday, 14th May 2024");
+});

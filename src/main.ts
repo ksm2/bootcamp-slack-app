@@ -57,7 +57,7 @@ const application = new Application({
   logger: new Logger("Application"),
   sessionPresenter: new SlackSessionPresenter(webClient, channel),
   sessionRepository: repository,
-  helpPrinter: new SlackHelpPrinter(webClient),
+  helpPrinter: new SlackHelpPrinter(webClient, new Logger("SlackHelpPrinter")),
 });
 
 interface Action {
@@ -82,6 +82,7 @@ actionEmitter.on(SlackActions.QUIT, async (action, body) => {
   await application.quitSession({
     sessionId: action.value,
     user: body.user,
+    channel: body.channel.id,
   });
 });
 
@@ -89,6 +90,7 @@ actionEmitter.on(SlackActions.JOIN, async (action, body) => {
   await application.joinSession({
     sessionId: action.value,
     user: body.user,
+    channel: body.channel.id,
   });
 });
 
@@ -107,17 +109,18 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
     const text: string = body.text;
     const args = text.split(/\s+/g).map((arg) => arg.toLowerCase());
     const user = { id: body.user_id } satisfies User;
+    const channel = body.channel_id as string;
     switch (args[0]) {
       case "help": {
-        await application.printHelp({ user, channel: body.channel_id });
+        await application.printHelp({ user, channel });
         break;
       }
       case "join": {
-        await application.joinSession({ dateString: args[1], user });
+        await application.joinSession({ dateString: args[1], user, channel });
         break;
       }
       case "quit": {
-        await application.quitSession({ dateString: args[1], user });
+        await application.quitSession({ dateString: args[1], user, channel });
         break;
       }
       default: {
@@ -125,7 +128,7 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
           "Try `/bootcamp join` to join the next session or `/bootcamp quit` to remove yourself from the next session.";
         await webClient.chat.postEphemeral({
           user: body.user_id,
-          channel: body.channel_id,
+          channel,
           text,
         });
         break;
