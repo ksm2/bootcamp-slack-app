@@ -6,7 +6,7 @@
   "author": "Konstantin Simon Maria Möllers <ksm.moellers@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "node --loader ts-node/esm ./src/main.ts"
+    "start": "node --import ./ts-load.js src/main.ts"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
