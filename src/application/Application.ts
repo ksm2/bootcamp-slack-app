@@ -118,37 +118,104 @@ export class Application {
     }
   }
 
-  async joinSession({ sessionId, user }: { sessionId: string; user: User }) {
-    const session = this.#sessions.get(sessionId);
-    if (!session) {
-      this.#logger.error("No session with ID:", sessionId);
-      return;
-    }
+  async joinSession(
+    { dateString, sessionId, user }: {
+      dateString?: string;
+      sessionId?: string;
+      user: User;
+    },
+  ) {
+    const session = this.findSession({ dateString, sessionId });
+    if (!session) return;
 
     const index = session.participants.indexOf(user.id);
     if (index >= 0) {
       this.#logger.warn("User already part of session:", user);
     } else {
       session.participants.push(user.id);
-      await this.#sessionPresenter.presentSession(session);
+      await this.#sessionPresenter.representSession(session);
       await this.#sessionRepository.saveSession(session);
     }
   }
 
-  async quitSession({ sessionId, user }: { sessionId: string; user: User }) {
-    const session = this.#sessions.get(sessionId);
-    if (!session) {
-      this.#logger.error("No session with ID:", sessionId);
-      return;
-    }
+  async quitSession(
+    { dateString, sessionId, user }: {
+      dateString?: string;
+      sessionId?: string;
+      user: User;
+    },
+  ) {
+    const session = this.findSession({ dateString, sessionId });
+    if (!session) return;
 
     const index = session.participants.indexOf(user.id);
     if (index >= 0) {
       session.participants.splice(index, 1);
-      await this.#sessionPresenter.presentSession(session);
+      await this.#sessionPresenter.representSession(session);
       await this.#sessionRepository.saveSession(session);
     } else {
       this.#logger.warn("User is not part of session:", user);
     }
+  }
+
+  private findSession(
+    { dateString, sessionId }: { dateString?: string; sessionId?: string },
+  ): Session | undefined {
+    if (sessionId) {
+      const session = this.#sessions.get(sessionId);
+      if (!session) {
+        this.#logger.error("No session with ID:", sessionId);
+        return undefined;
+      }
+
+      return session;
+    }
+
+    if (
+      dateString === "today" || dateString === "next" || dateString === "now" ||
+      dateString === undefined
+    ) {
+      return this.findNextSession();
+    }
+
+    if (dateString === "tomorrow") {
+      const tomorrow = LocalDate.today().tomorrow();
+      return this.findSessionForDate(tomorrow);
+    }
+
+    const weekdays = [
+      ["monday", LocalDate.MONDAY],
+      ["tuesday", LocalDate.TUESDAY],
+      ["wednesday", LocalDate.WEDNESDAY],
+      ["thursday", LocalDate.THURSDAY],
+      ["friday", LocalDate.FRIDAY],
+      ["saturday", LocalDate.SATURDAY],
+      ["sunday", LocalDate.SUNDAY],
+    ] as const;
+
+    for (const [weekday, day] of weekdays) {
+      if (dateString === weekday) {
+        const nextWeekday = LocalDate.today().nextWeekday(day);
+        return this.findSessionForDate(nextWeekday);
+      }
+    }
+
+    this.#logger.warn("Invalid date string:", dateString);
+    return undefined;
+  }
+
+  private findNextSession(): Session | undefined {
+    const today = LocalDate.today();
+    let result: Session | undefined;
+    for (const session of this.#sessions.values()) {
+      if (
+        !session.date.isBefore(today) &&
+        (!result || session.date.isBefore(result.date))
+      ) {
+        result = session;
+      }
+    }
+
+    return result;
   }
 }

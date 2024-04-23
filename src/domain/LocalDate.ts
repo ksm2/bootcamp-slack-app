@@ -19,7 +19,15 @@ export class LocalDate {
 
   static today(): LocalDate {
     const now = new Date();
-    return new LocalDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    return LocalDate.from(now);
+  }
+
+  static from(date: Date): LocalDate {
+    return new LocalDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+    );
   }
 
   get weekday(): number {
@@ -30,28 +38,46 @@ export class LocalDate {
     return this.equals(LocalDate.today());
   }
 
+  isBefore(other: LocalDate): boolean {
+    if (this.year < other.year) {
+      return true;
+    }
+    if (this.year > other.year) {
+      return false;
+    }
+    if (this.month < other.month) {
+      return true;
+    }
+    if (this.month > other.month) {
+      return false;
+    }
+    return this.day < other.day;
+  }
+
   yesterday(): LocalDate {
-    if (this.day > 1) {
-      return new LocalDate(this.year, this.month, this.day - 1);
-    }
-    if (this.month > 1) {
-      return new LocalDate(
-        this.year,
-        this.month - 1,
-        LocalDate.lastOfMonth(this.month - 1),
-      );
-    }
-    return new LocalDate(this.year - 1, 12, 31);
+    return this.addDays(-1);
   }
 
   tomorrow(): LocalDate {
-    if (this.day >= LocalDate.lastOfMonth(this.month - 1)) {
-      if (this.month >= 12) {
-        return new LocalDate(this.year + 1, 1, 1);
-      }
-      return new LocalDate(this.year, this.month + 1, 1);
+    return this.addDays(1);
+  }
+
+  nextWeekday(weekday: number): LocalDate {
+    if (weekday === this.weekday) {
+      return this.addDays(7);
     }
-    return new LocalDate(this.year, this.month, this.day + 1);
+    const daysUntilWeekday = (weekday - this.weekday + 7) % 7;
+    return this.addDays(daysUntilWeekday);
+  }
+
+  addDays(days: number): LocalDate {
+    const date = this.toDate();
+    date.setDate(date.getDate() + days);
+    return new LocalDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+    );
   }
 
   toDate(): Date {
@@ -74,11 +100,6 @@ export class LocalDate {
       this.month === other.month &&
       this.day === other.day
     );
-  }
-
-  private static lastOfMonth(month: number): number {
-    const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    return DAYS_IN_MONTH[month - 1];
   }
 
   static parse(value: string): LocalDate {

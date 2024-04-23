@@ -3,8 +3,10 @@
   "packages": {
     "specifiers": {
       "jsr:@denosaurs/event@^2.0.2": "jsr:@denosaurs/event@2.0.2",
+      "jsr:@std/assert@^0.223.0": "jsr:@std/assert@0.223.0",
       "jsr:@std/dotenv@^0.223.0": "jsr:@std/dotenv@0.223.0",
       "jsr:@std/fmt@^0.223.0": "jsr:@std/fmt@0.223.0",
+      "jsr:@std/testing@^0.223.0": "jsr:@std/testing@0.223.0",
       "npm:@slack/socket-mode@^1.3.4": "npm:@slack/socket-mode@1.3.4",
       "npm:@slack/web-api@^7.0.2": "npm:@slack/web-api@7.0.4",
       "npm:@types/express@^4.17.21": "npm:@types/express@4.17.21",
@@ -17,11 +19,23 @@
       "@denosaurs/event@2.0.2": {
         "integrity": "3310ba1a9e94dd60ccb09c6084fc818cc1cd50e543c56ef0c6199f1b89073392"
       },
+      "@std/assert@0.223.0": {
+        "integrity": "eb8d6d879d76e1cc431205bd346ed4d88dc051c6366365b1af47034b0670be24",
+        "dependencies": [
+          "jsr:@std/fmt@^0.223.0"
+        ]
+      },
       "@std/dotenv@0.223.0": {
         "integrity": "9ec65949815cb3dbf43ca082c0e299bcf528ff736fdb612db9274464059d49f4"
       },
       "@std/fmt@0.223.0": {
         "integrity": "6deb37794127dfc7d7bded2586b9fc6f5d50e62a8134846608baf71ffc1a5208"
+      },
+      "@std/testing@0.223.0": {
+        "integrity": "7a48b9a14589ed16beb2a31ec7150e9fff3acda58f3077af6a1fcdb92375143b",
+        "dependencies": [
+          "jsr:@std/assert@^0.223.0"
+        ]
       }
     },
     "npm": {
@@ -813,6 +827,7 @@
       "jsr:@denosaurs/event@^2.0.2",
       "jsr:@std/dotenv@^0.223.0",
       "jsr:@std/fmt@^0.223.0",
+      "jsr:@std/testing@^0.223.0",
       "npm:@slack/socket-mode@^1.3.4",
       "npm:@slack/web-api@^7.0.2",
       "npm:abstract-level@^1.0.4",

@@ -28,6 +28,16 @@ export class SlackSessionPresenter implements SessionPresenter {
     }
   }
 
+  async representSession(session: Session): Promise<void> {
+    if (session.ts) {
+      await this.#webClient.chat.update({
+        blocks: this.render(session),
+        channel: this.#channel,
+        ts: session.ts,
+      });
+    }
+  }
+
   private render(session: Session): KnownBlock[] {
     const introText = this.renderIntroText(session);
     const participantsText = this.renderParticipants(session.participants);

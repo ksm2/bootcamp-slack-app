@@ -13,6 +13,7 @@ import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
 import { Application } from "./application/Application.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
 import { Session } from "./domain/Session.ts";
+import { User } from "./domain/User.ts";
 
 await load({ export: true });
 
@@ -94,6 +95,35 @@ socketModeClient.on("interactive", async ({ body, ack }) => {
   if (body.type === "block_actions") {
     for (const action of body.actions) {
       actionEmitter.emit(action.action_id, action, body);
+    }
+  }
+});
+
+socketModeClient.on("slash_commands", async ({ body, ack }) => {
+  if (body.command === "/bootcamp") {
+    await ack();
+    const text: string = body.text;
+    const args = text.split(/\s+/g).map((arg) => arg.toLowerCase());
+    const user = { id: body.user_id } satisfies User;
+    switch (args[0]) {
+      case "join": {
+        await application.joinSession({ dateString: args[1], user });
+        break;
+      }
+      case "quit": {
+        await application.quitSession({ dateString: args[1], user });
+        break;
+      }
+      default: {
+        const text = "I didn't catch that. " +
+          "Try `/bootcamp join` to join the next session or `/bootcamp quit` to remove yourself from the next session.";
+        await webClient.chat.postEphemeral({
+          user: body.user_id,
+          channel: body.channel_id,
+          text,
+        });
+        break;
+      }
     }
   }
 });
