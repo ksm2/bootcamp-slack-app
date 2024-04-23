@@ -69,7 +69,7 @@ CronJob.from({
   start: true,
   runOnInit: false,
   onTick: async () => {
-    cronJobLogger.debug(`CronJob running on ${LocalDate.today()} at 8:00 AM`)
+    cronJobLogger.debug(`CronJob running on ${LocalDate.today()} at 8:00 AM`);
     await application.createSessions();
     await application.presentSessionOfToday();
   },

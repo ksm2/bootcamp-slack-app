@@ -3,9 +3,9 @@ import { SessionRepository } from "../application/SessionRepository.ts";
 import { Session } from "../domain/Session.ts";
 
 export class LevelSessionRepository implements SessionRepository {
-  readonly #db: AbstractLevel<unknown, string, Session>;
+  readonly #db: AbstractLevel<any, string, Session>;
 
-  constructor(db: AbstractLevel<unknown, string, Session>) {
+  constructor(db: AbstractLevel<any, string, Session>) {
     this.#db = db;
   }
 
