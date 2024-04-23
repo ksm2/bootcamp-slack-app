@@ -14,6 +14,7 @@ import { Application } from "./application/Application.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
 import { Session } from "./domain/Session.ts";
 import { User } from "./domain/User.ts";
+import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
 
 await load({ export: true });
 
@@ -56,6 +57,7 @@ const application = new Application({
   logger: new Logger("Application"),
   sessionPresenter: new SlackSessionPresenter(webClient, channel),
   sessionRepository: repository,
+  helpPrinter: new SlackHelpPrinter(webClient),
 });
 
 interface Action {
@@ -106,6 +108,10 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
     const args = text.split(/\s+/g).map((arg) => arg.toLowerCase());
     const user = { id: body.user_id } satisfies User;
     switch (args[0]) {
+      case "help": {
+        await application.printHelp({ user, channel: body.channel_id });
+        break;
+      }
       case "join": {
         await application.joinSession({ dateString: args[1], user });
         break;

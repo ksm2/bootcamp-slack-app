@@ -4,25 +4,30 @@ import { User } from "../domain/User.ts";
 import { Logger } from "./Logger.ts";
 import { SessionPresenter } from "./SessionPresenter.ts";
 import { SessionRepository } from "./SessionRepository.ts";
+import { HelpPrinter } from "./HelpPrinter.ts";
 
 export class Application {
   readonly #logger: Logger;
   readonly #sessionPresenter: SessionPresenter;
   readonly #sessionRepository: SessionRepository;
+  readonly #helpPrinter: HelpPrinter;
   readonly #sessions: Map<string, Session> = new Map();
 
   constructor({
     logger,
     sessionPresenter,
     sessionRepository,
+    helpPrinter,
   }: {
     logger: Logger;
     sessionPresenter: SessionPresenter;
     sessionRepository: SessionRepository;
+    helpPrinter: HelpPrinter;
   }) {
     this.#logger = logger;
     this.#sessionPresenter = sessionPresenter;
     this.#sessionRepository = sessionRepository;
+    this.#helpPrinter = helpPrinter;
   }
 
   async start(): Promise<void> {
@@ -217,5 +222,9 @@ export class Application {
     }
 
     return result;
+  }
+
+  async printHelp(args: { user: User; channel: string }): Promise<void> {
+    await this.#helpPrinter.printHelp(args.user.id, args.channel);
   }
 }
