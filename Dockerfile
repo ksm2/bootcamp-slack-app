@@ -1,4 +1,5 @@
 FROM denoland/deno:1.42.1
+LABEL org.opencontainers.image.source="https://github.com/ksm2/bootcamp-slack-app"
 WORKDIR /usr/src/app
 EXPOSE 8080
 
