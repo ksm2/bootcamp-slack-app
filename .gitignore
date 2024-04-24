@@ -2,3 +2,4 @@
 .idea/
 data/
 node_modules/
+*.bak
