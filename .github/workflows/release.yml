@@ -48,8 +48,8 @@ jobs:
       - name: Tag Docker image
         run: |
           docker pull ${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
-          docker push ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:v${{ github.event.inputs.version }}
+          docker push ${{ env.IMAGE_NAME }}:v${{ github.event.inputs.version }}
 
       - name: Push release commit
         run: |
