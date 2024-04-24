@@ -7,8 +7,12 @@ on:
         description: 'Next Version'
         required: true
 
+env:
+  IMAGE_NAME: ghcr.io/ksm2/bootcamp-slack-app
+
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -17,8 +21,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          token: ${{ secrets.release_token }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set author in Git
         run: |
@@ -35,6 +44,15 @@ jobs:
           git add deno.json
           git commit -m "${{ github.event.inputs.version }}"
           git tag "v${{ github.event.inputs.version }}"
+
+      - name: Tag Docker image
+        run: |
+          docker pull ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          docker push ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+
+      - name: Push release commit
+        run: |
           git push --tags origin ${{ github.ref_name }}
 
       - uses: ncipollo/release-action@v1
