@@ -5,14 +5,12 @@ import { load } from "@std/dotenv";
 import { CronJob } from "cron";
 // @deno-types="npm:@types/express@^4.17.21"
 import express from "express";
-import { Level } from "level";
-import { LevelSessionRepository } from "./adapters/LevelSessionRepository.ts";
+import { LevelModule } from "./adapters/level/LevelModule.ts";
 import { Logger } from "./application/Logger.ts";
 import { SlackActions } from "./adapters/SlackActions.ts";
 import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
 import { Application } from "./application/Application.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
-import { Session } from "./domain/Session.ts";
 import { User } from "./domain/User.ts";
 import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
 
@@ -27,23 +25,7 @@ if (!channel) {
   throw new Error("Please provide SLACK_CHANNEL");
 }
 
-const db = new Level(dbLocation);
-const sessions = db.sublevel<string, Session>("sessions", {
-  valueEncoding: {
-    name: "session",
-    format: "utf8",
-    encode: (data: Session): string => JSON.stringify(data),
-    decode: (data: string): Session =>
-      JSON.parse(data, (key, value) => {
-        if (key === "date") {
-          return LocalDate.parse(value);
-        } else {
-          return value;
-        }
-      }),
-  },
-});
-const repository = new LevelSessionRepository(sessions);
+const level = new LevelModule(dbLocation);
 
 const socketModeClient = new SocketModeClient({
   appToken,
@@ -56,7 +38,8 @@ await socketModeClient.start();
 const application = new Application({
   logger: new Logger("Application"),
   sessionPresenter: new SlackSessionPresenter(webClient, channel),
-  sessionRepository: repository,
+  sessionRepository: level.sessionRepository,
+  scheduleRepository: level.scheduleRepository,
   helpPrinter: new SlackHelpPrinter(webClient, new Logger("SlackHelpPrinter")),
 });
 
@@ -116,10 +99,18 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
         break;
       }
       case "join": {
+        if (args[1] === "every") {
+          await application.joinSchedule({ weekday: args[2], user, channel });
+          break;
+        }
         await application.joinSession({ dateString: args[1], user, channel });
         break;
       }
       case "quit": {
+        if (args[1] === "every") {
+          await application.quitSchedule({ weekday: args[2], user, channel });
+          break;
+        }
         await application.quitSession({ dateString: args[1], user, channel });
         break;
       }
@@ -146,6 +137,18 @@ app.use(express.json());
 
 app.get("/sessions", (_req, res) => {
   res.send(application.sessions());
+});
+
+app.delete("/sessions/:id", (req, res) => {
+  application.deleteSession(req.params.id).then(() => {
+    res.status(204).send();
+  });
+});
+
+app.get("/schedules", (_req, res) => {
+  application.schedules().then((schedules) => {
+    res.send(schedules);
+  });
 });
 
 app.listen(8080, () => {

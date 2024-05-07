@@ -1,6 +1,7 @@
 import { KnownBlock, WebClient } from "@slack/web-api";
 import { SessionPresenter } from "../application/SessionPresenter.ts";
 import { Session } from "../domain/Session.ts";
+import { list } from "../utils.ts";
 import { SlackActions } from "./SlackActions.ts";
 
 export class SlackSessionPresenter implements SessionPresenter {
@@ -92,7 +93,7 @@ export class SlackSessionPresenter implements SessionPresenter {
       return `<@${participants[0]}> is joining :muscle:`;
     }
 
-    return this.list(participants.map((it) => `<@${it}>`)) + " are joining";
+    return list(participants.map((it) => `<@${it}>`)) + " are joining";
   }
 
   private renderIntroText(session: Session): string {
@@ -101,19 +102,5 @@ export class SlackSessionPresenter implements SessionPresenter {
     }
 
     return `Who joined on ${session.date.toHuman()}:`;
-  }
-
-  private list(participants: readonly string[]): string {
-    if (participants.length === 0) {
-      return "";
-    }
-
-    if (participants.length === 1) {
-      return participants[0];
-    }
-
-    const head = [...participants];
-    const tail = head.pop()!;
-    return head.join(", ") + " and " + tail;
   }
 }
