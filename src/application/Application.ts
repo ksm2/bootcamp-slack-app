@@ -1,15 +1,25 @@
 import { LocalDate } from "../domain/LocalDate.ts";
 import { Session } from "../domain/Session.ts";
 import { User } from "../domain/User.ts";
+import { capitalize, list } from "../utils.ts";
 import { Logger } from "./Logger.ts";
 import { SessionPresenter } from "./SessionPresenter.ts";
 import { SessionRepository } from "./SessionRepository.ts";
+import { ScheduleRepository } from "./ScheduleRepository.ts";
 import { HelpPrinter } from "./HelpPrinter.ts";
+import { Schedule } from "../domain/Schedule.ts";
+
+const WEEKDAYS = new Map([
+  ["monday", 1],
+  ["tuesday", 2],
+  ["thursday", 4],
+]);
 
 export class Application {
   readonly #logger: Logger;
   readonly #sessionPresenter: SessionPresenter;
   readonly #sessionRepository: SessionRepository;
+  readonly #scheduleRepository: ScheduleRepository;
   readonly #helpPrinter: HelpPrinter;
   readonly #sessions: Map<string, Session> = new Map();
 
@@ -17,16 +27,19 @@ export class Application {
     logger,
     sessionPresenter,
     sessionRepository,
+    scheduleRepository,
     helpPrinter,
   }: {
     logger: Logger;
     sessionPresenter: SessionPresenter;
     sessionRepository: SessionRepository;
+    scheduleRepository: ScheduleRepository;
     helpPrinter: HelpPrinter;
   }) {
     this.#logger = logger;
     this.#sessionPresenter = sessionPresenter;
     this.#sessionRepository = sessionRepository;
+    this.#scheduleRepository = scheduleRepository;
     this.#helpPrinter = helpPrinter;
   }
 
@@ -50,9 +63,20 @@ export class Application {
     return [...this.#sessions.values()];
   }
 
+  async schedules(): Promise<Schedule[]> {
+    return await this.#scheduleRepository.loadAllSchedules();
+  }
+
   async createSessions(): Promise<void> {
     const nextDates = this.calculateNextDates();
     await this.createSessionsForDatesIfNotExist(nextDates);
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    if (this.#sessions.delete(sessionId)) {
+      await this.#sessionRepository.deleteSession(sessionId);
+      this.#logger.info(`Deleted session ${sessionId}`);
+    }
   }
 
   private calculateNextDates(): LocalDate[] {
@@ -106,11 +130,25 @@ export class Application {
 
   private async createSessionForDate(date: LocalDate): Promise<void> {
     const sessionId = crypto.randomUUID();
-    const session = { sessionId, date, participants: [] } satisfies Session;
+    const participants = await this.findScheduledParticipantsFor(date);
+    const session = { sessionId, date, participants } satisfies Session;
 
     this.#sessions.set(session.sessionId, session);
     await this.#sessionRepository.saveSession(session);
     this.#logger.debug(`Created session ${session}`);
+  }
+
+  private async findScheduledParticipantsFor(
+    date: LocalDate,
+  ): Promise<string[]> {
+    const participants = [];
+    for (const schedule of await this.#scheduleRepository.loadAllSchedules()) {
+      if (schedule.weekdays.includes(date.weekday)) {
+        participants.push(schedule.user);
+      }
+    }
+
+    return participants;
   }
 
   async presentSessionOfToday(): Promise<void> {
@@ -266,6 +304,111 @@ export class Application {
     }
 
     return result;
+  }
+
+  async joinSchedule(
+    { user, weekday, channel }: {
+      user: User;
+      channel: string;
+      weekday: string;
+    },
+  ): Promise<void> {
+    const weekdayNum = await this.resolveWeekday(weekday, channel, user);
+    if (weekdayNum === undefined) return;
+
+    let schedule = await this.#scheduleRepository.loadScheduleByUser(user.id);
+    if (!schedule) {
+      schedule = { user: user.id, weekdays: [weekdayNum] };
+    } else if (!schedule.weekdays.includes(weekdayNum)) {
+      schedule.weekdays.push(weekdayNum);
+      schedule.weekdays.sort((a, b) => a - b);
+    }
+
+    await this.updateSchedule(schedule, user, channel);
+  }
+
+  async quitSchedule(
+    { user, weekday, channel }: {
+      user: User;
+      channel: string;
+      weekday: string;
+    },
+  ): Promise<void> {
+    const weekdayNum = await this.resolveWeekday(weekday, channel, user);
+    if (weekdayNum === undefined) return;
+
+    const schedule = await this.#scheduleRepository.loadScheduleByUser(user.id);
+    if (!schedule) {
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You are not part of any schedule.`,
+      );
+      return;
+    }
+
+    const index = schedule.weekdays.indexOf(weekdayNum);
+    if (index < 0) {
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You are not part of a schedule for ${weekday}.`,
+      );
+      return;
+    }
+
+    schedule.weekdays.splice(index, 1);
+    if (schedule.weekdays.length === 0) {
+      await this.#scheduleRepository.deleteSchedule(schedule.user);
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `You are not on any schedule to join the bootcamp anymore.`,
+      );
+    } else {
+      await this.updateSchedule(schedule, user, channel);
+    }
+  }
+
+  private async resolveWeekday(
+    weekday: string,
+    channel: string,
+    user: User,
+  ): Promise<number | undefined> {
+    if (!WEEKDAYS.has(weekday)) {
+      await this.#helpPrinter.printInfo(
+        user.id,
+        channel,
+        `Invalid weekday provided: ${weekday}`,
+      );
+      return undefined;
+    }
+
+    return WEEKDAYS.get(weekday)!;
+  }
+
+  private async updateSchedule(
+    schedule: Schedule,
+    user: User,
+    channel: string,
+  ) {
+    console.dir(schedule);
+    await this.#scheduleRepository.saveSchedule(schedule);
+
+    const weekdays = list(
+      schedule.weekdays.map((wd) => this.nameWeekday(wd)).map(capitalize),
+    );
+    const message = `You are joining the bootcamp every ${weekdays}.`;
+    await this.#helpPrinter.printInfo(user.id, channel, message);
+  }
+
+  private nameWeekday(weekday: number): string {
+    for (const [str, num] of WEEKDAYS) {
+      if (weekday === num) {
+        return str;
+      }
+    }
+    return "";
   }
 
   async printHelp(args: { user: User; channel: string }): Promise<void> {
