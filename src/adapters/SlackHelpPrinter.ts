@@ -23,7 +23,10 @@ export class SlackHelpPrinter implements HelpPrinter {
         "To remove yourself from the next session:" +
         "```/bootcamp quit```" + PAR +
         "You can also specify a date to join or quit a session. Here are a few examples:" +
-        "```/bootcamp join thursday\n/bootcamp quit tomorrow\n/bootcamp join monday\n/bootcamp quit tuesday```",
+        "```/bootcamp join thursday\n/bootcamp quit tomorrow\n/bootcamp join monday\n/bootcamp quit tuesday```" +
+        PAR +
+        "Further, you can setup a *schedule*. Here are a few examples:" +
+        "```/bootcamp join every thursday\n/bootcamp quit every monday```",
     );
   }
 
