@@ -156,6 +156,7 @@ export class Application {
     const session = this.findSessionForDate(today);
     if (session) {
       await this.#sessionPresenter.presentSession(session);
+      await this.#sessionRepository.saveSession(session);
     } else {
       this.#logger.warn("No session for today");
     }
