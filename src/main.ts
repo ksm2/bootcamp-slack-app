@@ -27,13 +27,12 @@ if (!channel) {
 
 const level = new LevelModule(dbLocation);
 
+const socketModeLogger = new Logger("SocketModeClient", LogLevel.DEBUG);
 const socketModeClient = new SocketModeClient({
   appToken,
-  logger: new Logger("SocketModeClient", LogLevel.INFO),
+  logger: socketModeLogger,
 });
 const webClient = new WebClient(botToken);
-
-await socketModeClient.start();
 
 const application = new Application({
   logger: new Logger("Application"),
@@ -127,6 +126,29 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
     }
   }
 });
+
+socketModeClient.on("error", (error: Error) => {
+  socketModeLogger.error("Error occurred, shutting down:", error);
+  Deno.exit(1);
+});
+
+socketModeClient.on("disconnecting", () => {
+  socketModeLogger.warn("Disconnecting");
+});
+
+socketModeClient.on("reconnecting", () => {
+  socketModeLogger.info("Reconnecting");
+});
+
+socketModeClient.on("disconnected", (error: Error | undefined) => {
+  if (error) {
+    socketModeLogger.error("Disconnected with error:", error);
+  } else {
+    socketModeLogger.warn("Disconnected");
+  }
+});
+
+await socketModeClient.start();
 
 await application.start();
 
