@@ -10,6 +10,7 @@ import { Logger } from "./application/Logger.ts";
 import { SlackActions } from "./adapters/SlackActions.ts";
 import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
 import { Application } from "./application/Application.ts";
+import { Countdown } from "./domain/Countdown.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
 import { User } from "./domain/User.ts";
 import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
@@ -24,6 +25,15 @@ const dbLocation = Deno.env.get("DB_LOCATION") ?? "data";
 if (!channel) {
   throw new Error("Please provide SLACK_CHANNEL");
 }
+
+const ONE_HOUR = 60 * 60 * 1000;
+const inactivityCountdown = new Countdown(ONE_HOUR);
+inactivityCountdown.on("countdown", () => {
+  logger.error("No message received in the last hour. Shutting down.");
+  Deno.exit(1);
+});
+
+inactivityCountdown.start();
 
 const level = new LevelModule(dbLocation);
 
@@ -78,6 +88,7 @@ actionEmitter.on(SlackActions.JOIN, async (action, body) => {
 
 socketModeClient.on("interactive", async ({ body, ack }) => {
   await ack();
+  inactivityCountdown.reset();
   if (body.type === "block_actions") {
     for (const action of body.actions) {
       actionEmitter.emit(action.action_id, action, body);
@@ -88,6 +99,7 @@ socketModeClient.on("interactive", async ({ body, ack }) => {
 socketModeClient.on("slash_commands", async ({ body, ack }) => {
   if (body.command === "/bootcamp") {
     await ack();
+    inactivityCountdown.reset();
     const text: string = body.text;
     const args = text.split(/\s+/g).map((arg) => arg.toLowerCase());
     const user = { id: body.user_id } satisfies User;
