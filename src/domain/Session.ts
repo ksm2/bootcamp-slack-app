@@ -5,4 +5,5 @@ export interface Session {
   date: LocalDate;
   participants: string[];
   ts?: string;
+  limit?: number;
 }

@@ -22,6 +22,7 @@ export class Application {
   readonly #scheduleRepository: ScheduleRepository;
   readonly #helpPrinter: HelpPrinter;
   readonly #sessions: Map<string, Session> = new Map();
+  readonly #sessionLimit?: number;
 
   constructor({
     logger,
@@ -29,18 +30,21 @@ export class Application {
     sessionRepository,
     scheduleRepository,
     helpPrinter,
+    sessionLimit,
   }: {
     logger: Logger;
     sessionPresenter: SessionPresenter;
     sessionRepository: SessionRepository;
     scheduleRepository: ScheduleRepository;
     helpPrinter: HelpPrinter;
+    sessionLimit?: number;
   }) {
     this.#logger = logger;
     this.#sessionPresenter = sessionPresenter;
     this.#sessionRepository = sessionRepository;
     this.#scheduleRepository = scheduleRepository;
     this.#helpPrinter = helpPrinter;
+    this.#sessionLimit = sessionLimit;
   }
 
   async start(): Promise<void> {
@@ -131,7 +135,8 @@ export class Application {
   private async createSessionForDate(date: LocalDate): Promise<void> {
     const sessionId = crypto.randomUUID();
     const participants = await this.findScheduledParticipantsFor(date);
-    const session = { sessionId, date, participants } satisfies Session;
+    const limit = this.#sessionLimit;
+    const session = { sessionId, date, participants, limit } satisfies Session;
 
     this.#sessions.set(session.sessionId, session);
     await this.#sessionRepository.saveSession(session);
@@ -187,16 +192,32 @@ export class Application {
         channel,
         `You already joined the bootcamp on ${session.date.toHuman()}.`,
       );
-    } else {
-      session.participants.push(user.id);
-      await this.#sessionPresenter.representSession(session);
-      await this.#sessionRepository.saveSession(session);
+      return;
+    }
+
+    if (session.limit && session.participants.length >= session.limit) {
+      this.#logger.warn(
+        "Session is full",
+        session.sessionId,
+        session.limit,
+        user.id,
+      );
       await this.#helpPrinter.printInfo(
         user.id,
         channel,
-        `You are joining the bootcamp on ${session.date.toHuman()}.`,
+        `The bootcamp on ${session.date.toHuman()} is already full.`,
       );
+      return;
     }
+
+    session.participants.push(user.id);
+    await this.#sessionPresenter.representSession(session);
+    await this.#sessionRepository.saveSession(session);
+    await this.#helpPrinter.printInfo(
+      user.id,
+      channel,
+      `You are joining the bootcamp on ${session.date.toHuman()}.`,
+    );
   }
 
   async quitSession(

@@ -14,12 +14,14 @@ import { Countdown } from "./domain/Countdown.ts";
 import { LocalDate } from "./domain/LocalDate.ts";
 import { User } from "./domain/User.ts";
 import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
+import { parseOptionalInt } from "./utils.ts";
 
 await load({ export: true });
 
 const appToken = Deno.env.get("SLACK_APP_TOKEN");
 const botToken = Deno.env.get("SLACK_BOT_TOKEN");
 const channel = Deno.env.get("SLACK_CHANNEL");
+const sessionLimit = parseOptionalInt(Deno.env.get("SESSION_LIMIT"));
 const dbLocation = Deno.env.get("DB_LOCATION") ?? "data";
 
 if (!channel) {
@@ -50,6 +52,7 @@ const application = new Application({
   sessionRepository: level.sessionRepository,
   scheduleRepository: level.scheduleRepository,
   helpPrinter: new SlackHelpPrinter(webClient, new Logger("SlackHelpPrinter")),
+  sessionLimit,
 });
 
 interface Action {

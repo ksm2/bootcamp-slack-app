@@ -41,7 +41,10 @@ export class SlackSessionPresenter implements SessionPresenter {
 
   private render(session: Session): KnownBlock[] {
     const introText = this.renderIntroText(session);
-    const participantsText = this.renderParticipants(session.participants);
+    const participantsText = this.renderParticipants(
+      session.participants,
+      session.limit,
+    );
     return [
       {
         type: "section",
@@ -62,20 +65,14 @@ export class SlackSessionPresenter implements SessionPresenter {
         elements: [
           {
             type: "button",
-            text: {
-              type: "plain_text",
-              text: "Join",
-            },
+            text: plainText("Join Bootcamp"),
             style: "primary",
             value: session.sessionId,
             action_id: SlackActions.JOIN,
           },
           {
             type: "button",
-            text: {
-              type: "plain_text",
-              text: "Stay Home",
-            },
+            text: plainText("Stay Home"),
             value: session.sessionId,
             action_id: SlackActions.QUIT,
           },
@@ -84,16 +81,25 @@ export class SlackSessionPresenter implements SessionPresenter {
     ];
   }
 
-  private renderParticipants(participants: string[]): string {
+  private renderParticipants(
+    participants: string[],
+    limit: number | undefined,
+  ): string {
     if (participants.length === 0) {
       return "_Nobody is joining so far..._";
     }
 
-    if (participants.length === 1) {
-      return `<@${participants[0]}> is joining :muscle:`;
+    let limitText = "";
+    if (limit) {
+      limitText = ` (${participants.length}/${limit})`;
     }
 
-    return list(participants.map((it) => `<@${it}>`)) + " are joining";
+    if (participants.length === 1) {
+      return `<@${participants[0]}> is joining :muscle:${limitText}`;
+    }
+
+    return list(participants.map((it) => `<@${it}>`)) + " are joining" +
+      limitText;
   }
 
   private renderIntroText(session: Session): string {
@@ -103,4 +109,8 @@ export class SlackSessionPresenter implements SessionPresenter {
 
     return `Who joined on ${session.date.toHuman()}:`;
   }
+}
+
+function plainText(text: string): { type: "plain_text"; text: string } {
+  return { type: "plain_text", text };
 }
