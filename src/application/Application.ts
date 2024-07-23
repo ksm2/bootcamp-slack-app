@@ -1,13 +1,20 @@
 import { LocalDate } from "../domain/LocalDate.ts";
 import { Session } from "../domain/Session.ts";
 import { User } from "../domain/User.ts";
-import { capitalize, getHourInAmsterdam, list } from "../utils.ts";
+import {
+  capitalize,
+  getHourInAmsterdam,
+  isOneDayAfterLastSessionOfTheMonth,
+  list,
+} from "../utils.ts";
 import { Logger } from "./Logger.ts";
 import { SessionPresenter } from "./SessionPresenter.ts";
 import { SessionRepository } from "./SessionRepository.ts";
 import { ScheduleRepository } from "./ScheduleRepository.ts";
 import { HelpPrinter } from "./HelpPrinter.ts";
 import { Schedule } from "../domain/Schedule.ts";
+import { Leaderboard } from "../domain/Leaderboard.ts";
+import { LeaderboardPresenter } from "./LeaderboardPresenter.ts";
 
 const WEEKDAYS = new Map([
   ["monday", 1],
@@ -21,6 +28,7 @@ export class Application {
   readonly #sessionRepository: SessionRepository;
   readonly #scheduleRepository: ScheduleRepository;
   readonly #helpPrinter: HelpPrinter;
+  readonly #leaderboardPresenter: LeaderboardPresenter;
   readonly #sessions: Map<string, Session> = new Map();
   readonly #sessionLimit?: number;
 
@@ -30,6 +38,7 @@ export class Application {
     sessionRepository,
     scheduleRepository,
     helpPrinter,
+    leaderboardPresenter,
     sessionLimit,
   }: {
     logger: Logger;
@@ -37,6 +46,7 @@ export class Application {
     sessionRepository: SessionRepository;
     scheduleRepository: ScheduleRepository;
     helpPrinter: HelpPrinter;
+    leaderboardPresenter: LeaderboardPresenter;
     sessionLimit?: number;
   }) {
     this.#logger = logger;
@@ -44,6 +54,7 @@ export class Application {
     this.#sessionRepository = sessionRepository;
     this.#scheduleRepository = scheduleRepository;
     this.#helpPrinter = helpPrinter;
+    this.#leaderboardPresenter = leaderboardPresenter;
     this.#sessionLimit = sessionLimit;
   }
 
@@ -70,6 +81,11 @@ export class Application {
     return await this.#scheduleRepository.loadAllSchedules();
   }
 
+  leaderboard(year: number, month: number): Leaderboard {
+    const date = new LocalDate(year, month, 1);
+    return this.calculateLeaderboard(date);
+  }
+
   async onTick(): Promise<void> {
     const timeInAmsterdam = getHourInAmsterdam(new Date());
     if (timeInAmsterdam !== 9) return;
@@ -77,6 +93,7 @@ export class Application {
     this.#logger.info(`Running morning job on ${LocalDate.today()} at 9:00 AM`);
     await this.createSessions();
     await this.presentSessionOfToday();
+    await this.presentLeaderboard();
   }
 
   async createSessions(): Promise<void> {
@@ -173,6 +190,28 @@ export class Application {
     } else {
       this.#logger.warn("No session for today");
     }
+  }
+
+  async presentLeaderboard(): Promise<void> {
+    const today = LocalDate.today();
+    if (isOneDayAfterLastSessionOfTheMonth(today)) {
+      const leaderboard = this.calculateLeaderboard(today.yesterday());
+      await this.#leaderboardPresenter.presentLeaderboard(leaderboard);
+    }
+  }
+
+  private calculateLeaderboard(forDay: LocalDate): Leaderboard {
+    const lastMonth = forDay.absoluteMonth;
+    const leaderboard = new Leaderboard(forDay.month, forDay.year);
+    const allSessionsThatMonth = this.sessions().filter((session) =>
+      session.date.absoluteMonth === lastMonth
+    );
+    for (const session of allSessionsThatMonth) {
+      for (const participant of session.participants) {
+        leaderboard.addAttendee(participant);
+      }
+    }
+    return leaderboard;
   }
 
   async joinSession(

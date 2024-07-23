@@ -55,8 +55,16 @@ export class LocalDate {
     );
   }
 
+  static humanizeMonth(month: number): string {
+    return MONTHS[month - 1];
+  }
+
   get weekday(): number {
     return this.toDate().getDay();
+  }
+
+  get absoluteMonth(): number {
+    return this.year * 12 + this.month - 1;
   }
 
   isToday(): boolean {
@@ -115,7 +123,7 @@ export class LocalDate {
 
   toHuman(): string {
     const weekdayString = WEEKDAYS[this.weekday];
-    const monthString = MONTHS[this.month - 1];
+    const monthString = LocalDate.humanizeMonth(this.month);
     const ord = (n: number): string => {
       if (n === 1 || n === 21 || n === 31) {
         return "st";

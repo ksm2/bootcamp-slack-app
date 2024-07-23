@@ -13,6 +13,7 @@ import { Application } from "./application/Application.ts";
 import { Countdown } from "./domain/Countdown.ts";
 import { User } from "./domain/User.ts";
 import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
+import { SlackLeaderboardPresenter } from "./adapters/SlackLeaderboardPresenter.ts";
 import { parseOptionalInt } from "./utils.ts";
 
 await load({ export: true });
@@ -51,6 +52,7 @@ const application = new Application({
   sessionRepository: level.sessionRepository,
   scheduleRepository: level.scheduleRepository,
   helpPrinter: new SlackHelpPrinter(webClient, new Logger("SlackHelpPrinter")),
+  leaderboardPresenter: new SlackLeaderboardPresenter(webClient, channel),
   sessionLimit,
 });
 
@@ -184,6 +186,14 @@ app.get("/schedules", (_req, res) => {
   application.schedules().then((schedules) => {
     res.send(schedules);
   });
+});
+
+app.get("/leaderboard/:year/:month", (req, res) => {
+  const leaderboard = application.leaderboard(
+    +req.params.year,
+    +req.params.month,
+  );
+  res.send(leaderboard);
 });
 
 app.listen(8080, () => {

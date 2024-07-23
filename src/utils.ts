@@ -1,3 +1,5 @@
+import { LocalDate } from "./domain/LocalDate.ts";
+
 export function list(participants: readonly string[]): string {
   if (participants.length === 0) {
     return "";
@@ -38,4 +40,24 @@ export function getHourInAmsterdam(date: Date): number {
     }
   }
   return 0;
+}
+
+export function isOneDayAfterLastSessionOfTheMonth(date: LocalDate): boolean {
+  const dayBefore = date.yesterday();
+  if (!isBootcampDay(dayBefore)) {
+    return false;
+  }
+
+  for (let d = date; d.month === dayBefore.month; d = d.tomorrow()) {
+    if (isBootcampDay(d)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function isBootcampDay(date: LocalDate): boolean {
+  return date.weekday === LocalDate.MONDAY ||
+    date.weekday === LocalDate.TUESDAY || date.weekday === LocalDate.THURSDAY;
 }
