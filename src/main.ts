@@ -11,7 +11,6 @@ import { SlackActions } from "./adapters/SlackActions.ts";
 import { SlackSessionPresenter } from "./adapters/SlackSessionPresenter.ts";
 import { Application } from "./application/Application.ts";
 import { Countdown } from "./domain/Countdown.ts";
-import { LocalDate } from "./domain/LocalDate.ts";
 import { User } from "./domain/User.ts";
 import { SlackHelpPrinter } from "./adapters/SlackHelpPrinter.ts";
 import { parseOptionalInt } from "./utils.ts";
@@ -63,13 +62,12 @@ const actionEmitter = new EventEmitter<{ [action: string]: [Action, any] }>();
 
 const cronJobLogger = new Logger("CronJob");
 CronJob.from({
-  cronTime: "0 8 * * *",
+  cronTime: "0 * * * *",
   start: true,
   runOnInit: false,
   onTick: async () => {
-    cronJobLogger.debug(`CronJob running on ${LocalDate.today()} at 8:00 AM`);
-    await application.createSessions();
-    await application.presentSessionOfToday();
+    cronJobLogger.debug("Running cron job");
+    await application.onTick();
   },
 });
 

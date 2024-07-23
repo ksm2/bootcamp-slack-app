@@ -1,7 +1,7 @@
 import { LocalDate } from "../domain/LocalDate.ts";
 import { Session } from "../domain/Session.ts";
 import { User } from "../domain/User.ts";
-import { capitalize, list } from "../utils.ts";
+import { capitalize, getHourInAmsterdam, list } from "../utils.ts";
 import { Logger } from "./Logger.ts";
 import { SessionPresenter } from "./SessionPresenter.ts";
 import { SessionRepository } from "./SessionRepository.ts";
@@ -57,8 +57,7 @@ export class Application {
     this.#logger.info(
       `Loaded ${existingSessions.length} sessions from repository`,
     );
-    await this.createSessions();
-    await this.presentSessionOfToday();
+    await this.onTick();
 
     this.#logger.info("Application started");
   }
@@ -69,6 +68,15 @@ export class Application {
 
   async schedules(): Promise<Schedule[]> {
     return await this.#scheduleRepository.loadAllSchedules();
+  }
+
+  async onTick(): Promise<void> {
+    const timeInAmsterdam = getHourInAmsterdam(new Date());
+    if (timeInAmsterdam !== 9) return;
+
+    this.#logger.info(`Running morning job on ${LocalDate.today()} at 9:00 AM`);
+    await this.createSessions();
+    await this.presentSessionOfToday();
   }
 
   async createSessions(): Promise<void> {

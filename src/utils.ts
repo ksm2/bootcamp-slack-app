@@ -24,3 +24,18 @@ export function parseOptionalInt(
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? undefined : parsed;
 }
+
+const formatter = new Intl.DateTimeFormat([], {
+  hour: "numeric",
+  timeZone: "Europe/Amsterdam",
+});
+
+export function getHourInAmsterdam(date: Date): number {
+  const parts = formatter.formatToParts(date);
+  for (const part of parts) {
+    if (part.type === "hour") {
+      return parseInt(part.value, 10);
+    }
+  }
+  return 0;
+}
