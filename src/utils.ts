@@ -32,14 +32,20 @@ const formatter = new Intl.DateTimeFormat([], {
   timeZone: "Europe/Amsterdam",
 });
 
-export function getHourInAmsterdam(date: Date): number {
+export function getHourInAmsterdam(
+  date: Date,
+): { hour: number; minute: number } {
   const parts = formatter.formatToParts(date);
+  let hour = 0;
+  let minute = 0;
   for (const part of parts) {
     if (part.type === "hour") {
-      return parseInt(part.value, 10);
+      hour = parseInt(part.value, 10);
+    } else if (part.type === "minute") {
+      minute = parseInt(part.value, 10);
     }
   }
-  return 0;
+  return { hour, minute };
 }
 
 export function isOneDayAfterLastSessionOfTheMonth(date: LocalDate): boolean {

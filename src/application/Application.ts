@@ -87,8 +87,8 @@ export class Application {
   }
 
   async onTick(): Promise<void> {
-    const timeInAmsterdam = getHourInAmsterdam(new Date());
-    if (timeInAmsterdam !== 9) return;
+    const { hour, minute } = getHourInAmsterdam(new Date());
+    if (hour !== 9 && minute < 15) return;
 
     this.#logger.info(`Running morning job on ${LocalDate.today()} at 9:00 AM`);
     await this.createSessions();
