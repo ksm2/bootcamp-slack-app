@@ -27,7 +27,7 @@ Deno.test("Leaderboard", () => {
   assertEquals(leaderboard.levels, [
     { level: 1, participant: "user1", attendances: 2 },
     { level: 1, participant: "user2", attendances: 2 },
-    { level: 3, participant: "user3", attendances: 1 },
+    { level: 2, participant: "user3", attendances: 1 },
   ]);
 
   leaderboard.addAttendee("user3");

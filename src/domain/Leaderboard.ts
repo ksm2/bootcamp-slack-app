@@ -34,7 +34,7 @@ export class Leaderboard {
     let numberOfParticipants = 1;
     for (const l of this.levels) {
       if (l.attendances !== lastAttendances) {
-        level += numberOfParticipants;
+        level += 1;
         numberOfParticipants = 0;
         lastAttendances = l.attendances;
       }
