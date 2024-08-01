@@ -74,6 +74,6 @@ export class SlackLeaderboardPresenter implements LeaderboardPresenter {
   private renderIntroText(leaderboard: Leaderboard): string {
     const month = LocalDate.humanizeMonth(leaderboard.month);
     const year = leaderboard.year;
-    return `*Hear is the leaderboard for ${month} ${year}* :fire:`;
+    return `*Here is the leaderboard for ${month} ${year}* :fire:`;
   }
 }
