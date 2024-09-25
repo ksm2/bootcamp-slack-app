@@ -28,7 +28,7 @@ export function parseOptionalInt(
 }
 
 const formatter = new Intl.DateTimeFormat([], {
-  hour: "numeric",
+  hour: "2-digit",
   timeZone: "Europe/Amsterdam",
 });
 
