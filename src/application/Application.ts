@@ -101,6 +101,21 @@ export class Application {
     await this.createSessionsForDatesIfNotExist(nextDates);
   }
 
+  getSession(sessionId: string): Session | undefined {
+    return this.#sessions.get(sessionId);
+  }
+
+  async putSession(sessionId: string, session: Session): Promise<Session> {
+    if (session.sessionId !== sessionId) {
+      throw new Error(
+        `Session ID mismatch: ${session.sessionId} !== ${sessionId}`,
+      );
+    }
+    this.#sessions.set(sessionId, session);
+    await this.#sessionRepository.saveSession(session);
+    return session;
+  }
+
   async deleteSession(sessionId: string): Promise<void> {
     if (this.#sessions.delete(sessionId)) {
       await this.#sessionRepository.deleteSession(sessionId);

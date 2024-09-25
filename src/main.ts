@@ -176,6 +176,16 @@ app.get("/sessions", (_req, res) => {
   res.send(application.sessions());
 });
 
+app.get("/sessions/:id", (req, res) => {
+  res.send(application.getSession(req.params.id));
+});
+
+app.put("/sessions/:id", (req, res) => {
+  application.putSession(req.params.id, req.body).then((session) => {
+    res.send(session);
+  });
+});
+
 app.delete("/sessions/:id", (req, res) => {
   application.deleteSession(req.params.id).then(() => {
     res.status(204).send();
