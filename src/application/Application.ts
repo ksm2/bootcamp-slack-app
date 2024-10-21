@@ -4,6 +4,7 @@ import { User } from "../domain/User.ts";
 import {
   capitalize,
   getHourInAmsterdam,
+  isBootcampDay,
   isOneDayAfterLastSessionOfTheMonth,
   list,
 } from "../utils.ts";
@@ -132,23 +133,12 @@ export class Application {
   }
 
   private calculateNextDateFrom(date: LocalDate): LocalDate {
-    switch (date.weekday) {
-      case LocalDate.SUNDAY:
-        return date.addDays(1);
-      case LocalDate.MONDAY:
-        return date;
-      case LocalDate.TUESDAY:
-        return date;
-      case LocalDate.WEDNESDAY:
-        return date.addDays(1);
-      case LocalDate.THURSDAY:
-        return date;
-      case LocalDate.FRIDAY:
-        return date.addDays(3);
-      case LocalDate.SATURDAY:
-      default:
-        return date.addDays(2);
+    let nextDate = date;
+    while (!isBootcampDay(nextDate)) {
+      nextDate = nextDate.tomorrow();
     }
+
+    return nextDate;
   }
 
   private async createSessionsForDatesIfNotExist(

@@ -65,5 +65,7 @@ export function isOneDayAfterLastSessionOfTheMonth(date: LocalDate): boolean {
 
 export function isBootcampDay(date: LocalDate): boolean {
   return date.weekday === LocalDate.MONDAY ||
-    date.weekday === LocalDate.TUESDAY || date.weekday === LocalDate.THURSDAY;
+    date.weekday === LocalDate.TUESDAY ||
+    date.weekday === LocalDate.WEDNESDAY ||
+    date.weekday === LocalDate.THURSDAY;
 }
