@@ -309,6 +309,15 @@ export class Application {
     }
   }
 
+  async printLeaderboard({ user, channel }: { user: User; channel: string }) {
+    const leaderboard = this.calculateLeaderboard(LocalDate.today());
+    await this.#leaderboardPresenter.presentLeaderboardForUser(
+      leaderboard,
+      user.id,
+      channel,
+    );
+  }
+
   private findSession(
     { dateString, sessionId }: { dateString?: string; sessionId?: string },
   ): Session {

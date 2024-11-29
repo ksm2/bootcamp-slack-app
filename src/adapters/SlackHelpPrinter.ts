@@ -26,7 +26,10 @@ export class SlackHelpPrinter implements HelpPrinter {
         "```/bootcamp join thursday\n/bootcamp quit tomorrow\n/bootcamp join monday\n/bootcamp quit tuesday```" +
         PAR +
         "Further, you can setup a *schedule*. Here are a few examples:" +
-        "```/bootcamp join every thursday\n/bootcamp quit every monday```",
+        "```/bootcamp join every thursday\n/bootcamp quit every monday```" +
+        PAR +
+        "If you want to see the current leaderboard use the following command:" +
+        "```/bootcamp leaderboard```",
     );
   }
 

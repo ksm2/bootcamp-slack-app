@@ -128,6 +128,10 @@ socketModeClient.on("slash_commands", async ({ body, ack }) => {
         await application.quitSession({ dateString: args[1], user, channel });
         break;
       }
+      case "leaderboard": {
+        await application.printLeaderboard({ user, channel });
+        break;
+      }
       default: {
         const text = "I didn't catch that. " +
           "Try `/bootcamp join` to join the next session or `/bootcamp quit` to remove yourself from the next session.";
